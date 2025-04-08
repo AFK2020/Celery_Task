@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+      db:
+        image: postgres:15
+        environment:
+          POSTGRES_USER: ${USER}
+          POSTGRES_PASSWORD: ${PASSWORD}
+          POSTGRES_DB: ${NAME}
+        volumes:
+          - postgres_data:/var/lib/postgresql/postgres_data
+        ports:
+          - 5432:5432   #5432 was allocated already
+
+      web:
+        build:
+          context: .
+        container_name: myapp
+        volumes:
+        - .:/app  # Ensures that code changes are reflected inside the container
+        ports:
+            - "8000:8000"
+        # environment:
+        # - DEBUG=True
+        # - DJANGO_SUPERUSER_USERNAME=afk@gmail.com
+        # - DJANGO_SUPERUSER_PASSWORD=test
+        depends_on:
+        - db
+        command: python manage.py runserver 0.0.0.0:8000
+
+      celery_beat:
+        build: .
+        depends_on:
+          - redis
+          - web
+        env_file: .env
+
+        command: celery -A django_celery beat -l info
+        
+      celery:
+        build: .
+        depends_on:
+        - web
+        - redis
+        env_file: .env
+        command: celery -A django_celery worker -l info
+
+      redis:
+        image: redis:alpine
+        ports:
+          - "6380:6379"  # Expose Redis on port 6379/ changed to 6380 because 6379 was already in use
+
+volumes:
+  postgres_data:

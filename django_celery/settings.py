@@ -9,8 +9,16 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+from celery.schedules import crontab
+import feedback.tasks
+
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,9 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-26w#-h7$d@obw2g^r%&!$6cs4s+3^strd^ky8-3wb90*lg8e_i"
-)
+
+SECRET_KEY = os.getenv("SECRET_KEY", default="")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -30,9 +38,6 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
-# Celery settings
-CELERY_BROKER_URL = "redis://localhost:6379"
-CELERY_RESULT_BACKEND = "redis://localhost:6379"
 
 # Application definition
 
@@ -44,6 +49,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "feedback.apps.FeedbackConfig",
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -81,9 +88,13 @@ WSGI_APPLICATION = "django_celery.wsgi.application"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv("NAME", default=""),
+        'USER': os.getenv("USER", default=""),
+        'PASSWORD': os.getenv("PASSWORD", default=""),
+        'HOST':'db',   # service name for docker-compose
+        'PORT': 5432,
     }
 }
 
@@ -131,3 +142,26 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Email placeholder setting
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+
+
+
+# Celery settings
+CELERY_BROKER_URL =  os.getenv("CELERY_BROKER_URL", default="")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", default="")
+
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# # If using Redis for results as well
+# CELERY_RESULT_EXPIRES = 3600  # 1 hour
+
+
+# Celery Beat settings (for periodic tasks)
+CELERY_BEAT_SCHEDULE = {
+    "sample_task": {
+        "task": "feedback.tasks.send_mail_task",
+        "schedule": crontab(minute="*/1"),
+    },
+}

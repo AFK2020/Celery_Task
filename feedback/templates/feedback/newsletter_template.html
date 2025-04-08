@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ newsletter.subject }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header {
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .subscriber-info {
+            margin-top: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ newsletter.subject }}</h1>
+    </div>
+    <div class="content">
+        <p>{{ newsletter.content }}</p>
+    </div>
+    <div class="footer">
+        <p>&copy; 2025 My Newsletter Service</p>
+        <p class="subscriber-info">Dear {{ subscriber.email }}, you are receiving this email because you subscribed to our newsletter.</p>
+    </div>
+</body>
+</html>
